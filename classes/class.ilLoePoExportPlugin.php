@@ -11,156 +11,229 @@ include_once("./Services/Component/classes/class.ilPlugin.php");
 */
 class ilLoePoExportPlugin extends ilPlugin
 {
-		private $test;
+	private $ilObjTestData;
 	
-		final function getPluginName()
-		{
-			return "LoePoExport";
-		}
-		
-		/**
-		 * Get Component Type
-		 *
-		 * @return        string        Component Type
-		 */
-		final function getComponentType()
-		{
-			return IL_COMP_MODULE;
-		}
-		
-		/**
-		 * Get Component Name.
-		 *
-		 * @return        string        Component Name
-		 */
-		final function getComponentName()
-		{
-			return "Test";
-		}
-		
-		/**
-		 * Get Slot Name.
-		 *
-		 * @return        string        Slot Name
-		 */
-		final function getSlot()
-		{
-			return "Export";
-		}
-		
-		/**
-		 * Get Slot ID.
-		 *
-		 * @return        string        Slot Id
-		 */
-		final function getSlotId()
-		{
-			return "texp";
-		}
-		
-		/**
-		 * Object initialization done by slot.
-		 */
-		protected final function slotInit()
-		{
-			// nothing to do here
-		}
-		
-		function getFormat()
-		{
-			return "test";
-		}
-		
-		function getFormatLabel()
-		{
-			return $this->txt('assExport_Label');
-		}
+	const TYPE_EXCEL = 'excel';
 
-		function setTest($obj)
+	final function getPluginName()
+	{
+		return "LoePoExport";
+	}
+	
+	/**
+	 * Get Component Type
+	 *
+	 * @return        string        Component Type
+	 */
+	final function getComponentType()
+	{
+		return IL_COMP_MODULE;
+	}
+	
+	/**
+	 * Get Component Name.
+	 *
+	 * @return        string        Component Name
+	 */
+	final function getComponentName()
+	{
+		return "Test";
+	}
+	
+	/**
+	 * Get Slot Name.
+	 *
+	 * @return        string        Slot Name
+	 */
+	final function getSlot()
+	{
+		return "Export";
+	}
+	
+	/**
+	 * Get Slot ID.
+	 *
+	 * @return        string        Slot Id
+	 */
+	final function getSlotId()
+	{
+		return "texp";
+	}
+	
+	/**
+	 * Object initialization done by slot.
+	 */
+	protected final function slotInit()
+	{
+		// nothing to do here
+	}
+	
+	function getFormat()
+	{
+		return ilLoePoExportPlugin::TYPE_EXCEL;
+	}
+	
+	function getFormatLabel()
+	{
+		return $this->txt('ilLoePoExport_Label');
+	}
+
+	function setTest($obj)
+	{
+		$this->ilObjTestData = $obj;
+		
+		global $tpl;
+		
+		/* inject JS */
+		$tpl->addJavaScript($this->getDirectory().'/templates/loepoexp.js');
+	}
+	
+	function export()
+	{
+		$this->includeClass("class.ilLoePoExport.php");
+				
+		switch($_POST['format'])
 		{
-			$this->test = $obj;
+			case ilLoePoExportPlugin::TYPE_EXCEL:
+				$name = 'Löwenportal_Export';
+				$suffix = 'xls';
+				$type = ilLoePoExport::TYPE_EXCEL;
+				break;
+
+			default:
+				$name = 'Löwenportal_Export';
+				$suffix = 'xls';
+				$type = ilLoePoExport::TYPE_EXCEL;
+				break;
 		}
 		
-		function export()
+		require_once('Modules/Test/classes/class.ilTestExportFilename.php');
+		$filename = new ilTestExportFilename($this->ilObjTestData);
+		
+		$path = $filename->getPathname($suffix, $name);
+		
+		require_once $this->getDirectory(). '/lib/PHPExcel-1.8/Classes/PHPExcel.php';
+		$excelObj = new PHPExcel();
+		
+		$this->fillData($worksheet = $excelObj->getActiveSheet());
+
+		$cell = $worksheet->getCell('A1');
+		$cell->setValueExplicit('blubb', PHPExcel_Cell_DataType::TYPE_STRING);
+		
+		$worksheet->setTitle('test_results');
+		$worksheet->setComments(array());
+		
+		$excelObj->setActiveSheetIndex(0);
+		
+		$writerObj = PHPExcel_IOFactory::createWriter($excelObj, 'Excel5');
+		$writerObj->save($path);
+		
+		if (is_file($path))
 		{
-			$a_id = $this->test->test_id;
-			
-			return array(
-					"success" => $success,
-					"file" => $new_file,
-					"directory" => $export_dir
-			);
-			
-			$this->log->debug("export type: $a_type, id: $a_id, target_release: ".$a_target_release);
-			
-			// if no target release specified, use latest major release number
-			if ($a_target_release == "")
+			ilUtil::deliverFile($path, $_POST['pruefungsnummer'].'_klu.xls', '', false, true);
+			ilUtil::sendSuccess(sprintf($this->txt('ilLoePoExport_export_written'), basename($path)), true);
+		}
+		else
+		{
+			ilUtil::sendFailure($this->plugin->txt('export_not_found'), true);
+		}
+	}
+	
+	/**
+	 * Fill the test overview sheet
+	 * @param PHPExcel_Worksheet	$worksheet
+	 */
+	protected function fillData($worksheet)
+	{
+		$data = $this->ilObjTestData;
+		
+		
+		
+		
+		
+		return false;
+		$data = array();
+		/** @var ilExteStatValue[]  $values */
+		$values = $this->statObj->getSourceData()->getBasicTestValues();
+		foreach ($this->statObj->getSourceData()->getBasicTestValuesList() as $def)
+		{
+			array_push($data,
+					array(
+							'title' => $def['title'],
+							'description' => $def['description'],
+							'value' => $values[$def['id']],
+							'details' => null
+					));
+		}
+		
+		/** @var  ilExteEvalTest $evaluation */
+		foreach ($this->statObj->getEvaluations(
+				ilExtendedTestStatistics::LEVEL_TEST,
+				ilExtendedTestStatistics::PROVIDES_VALUE) as $class => $evaluation)
+		{
+			array_push($data,
+					array(
+							'title' => $evaluation->getTitle(),
+							'description' => $evaluation->getDescription(),
+							'value' => $evaluation->getValue()
+					));
+		}
+		
+		// Debug value formats
+		if ($this->plugin->debugFormats())
+		{
+			foreach (ilExteStatValue::_getDemoValues() as $value)
 			{
-				$v = explode(".", ILIAS_VERSION_NUMERIC);
-				$a_target_release = $v[0].".".$v[1].".0";
-				$this->log->debug("target_release set to: ".$a_target_release);
+				array_push($data,
+						array(
+								'title' => $value->comment,
+								'description' => '',
+								'value' => $value,
+						));
+			}
+		}
+		
+		$rownum = 0;
+		$comments = array();
+		foreach ($data as $row)
+		{
+			$rownum++;
+			
+			// title
+			$cell = $worksheet->getCell('A'.$rownum);
+			$cell->setValueExplicit($row['title'],PHPExcel_Cell_DataType::TYPE_STRING);
+			$cell->getStyle()->applyFromArray($this->headerStyle);
+			if (!empty($row['description']))
+			{
+				$comments['A'.$rownum] = ilExteStatValueExcel::_createComment($row['description']);
 			}
 			
-			// manifest writer
-			include_once "./Services/Xml/classes/class.ilXmlWriter.php";
-			$this->manifest_writer = new ilXmlWriter();
-			$this->manifest_writer->xmlHeader();
-			$this->manifest_writer->xmlStartTag(
-					'Manifest',
-					array(
-							"MainEntity" => $a_type,
-							"Title" => ilObject::_lookupTitle($a_id),
-							"TargetRelease" => $a_target_release,
-							"InstallationId" => IL_INST_ID,
-							"InstallationUrl" => ILIAS_HTTP_PATH));
-					
-					// get export class
-					ilExport::_createExportDirectory($a_id, "xml", $a_type);
-					$export_dir = ilExport::_getExportDirectory($a_id, "xml", $a_type);
-					$ts = time();
-					
-					// Workaround for test assessment
-					$sub_dir = $ts.'__'.IL_INST_ID.'__'.$a_type.'_'.$a_id;
-					$new_file = $sub_dir.'.zip';
-					
-					$this->export_run_dir = $export_dir."/".$sub_dir;
-					ilUtil::makeDirParents($this->export_run_dir);
-					$this->log->debug("export dir: ".$this->export_run_dir);
-					
-					$this->cnt = array();
-					
-					include_once './Services/Export/classes/class.ilImportExportFactory.php';
-					$class = ilImportExportFactory::getExporterClass($a_type);
-					$comp = ilImportExportFactory::getComponentForExport($a_type);
-					
-					$success = $this->processExporter($comp, $class, $a_type, $a_target_release, $a_id);
-					
-					$this->manifest_writer->xmlEndTag('Manifest');
-					
-					$this->manifest_writer->xmlDumpFile($this->export_run_dir."/manifest.xml", false);
-					
-					// zip the file
-					$this->log->debug("zip: ".$export_dir."/".$new_file);
-					ilUtil::zip($this->export_run_dir, $export_dir."/".$new_file);
-					ilUtil::delDir($this->export_run_dir);
-					
-					// Store info about export
-					if($success)
-					{
-						include_once './Services/Export/classes/class.ilExportFileInfo.php';
-						$exp = new ilExportFileInfo($a_id);
-						$exp->setVersion($a_target_release);
-						$exp->setCreationDate(new ilDateTime($ts,IL_CAL_UNIX));
-						$exp->setExportType('xml');
-						$exp->setFilename($new_file);
-						$exp->create();
-					}
-					
-					return array(
-							"success" => $success,
-							"file" => $new_file,
-							"directory" => $export_dir
-					);
+			/** @var ilExteStatValue $value */
+			$value = $row['value'];
+			$cell = $worksheet->getCell('B'.$rownum);
+			$cell->getStyle()->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+			$this->valView->writeInCell($cell, $value);
+			if (!empty($value->comment))
+			{
+				$comments['B'.$rownum] = $this->valView->getComment($value);
+			}
 		}
+		
+		$worksheet->setTitle($this->plugin->txt('test_results'));
+		$worksheet->setComments($comments);
+		$this->adjustSizes($worksheet);
+	}
+	
+	/**
+	 * @param PHPExcel_Worksheet	$worksheet
+	 */
+	protected function adjustSizes($worksheet, $range = null)
+	{
+		$range = isset($range) ? $range : range('A', $worksheet->getHighestColumn());
+		foreach ($range as $columnID)
+		{
+			$worksheet->getColumnDimension($columnID)->setAutoSize(true);
+		}
+	}
 }
 ?>

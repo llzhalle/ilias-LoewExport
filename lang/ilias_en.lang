@@ -5,3 +5,5 @@
 //
 
 <!-- language file start -->
+ilLoePoExport_Label#:#Create Test Results Export File for Löwenportal
+ilLoePoExport_export_written#:#Results Export File `%s` was written and downloaded.
