@@ -11,6 +11,9 @@ include_once("./Services/Component/classes/class.ilPlugin.php");
 */
 class ilLoePoExportPlugin extends ilPlugin
 {
+	/**
+	 * @var ilObjTest
+	 */
 	private $ilObjTestData;
 	
 	const TYPE_EXCEL = 'excel';
@@ -89,21 +92,19 @@ class ilLoePoExportPlugin extends ilPlugin
 	}
 	
 	function export()
-	{
-		$this->includeClass("class.ilLoePoExport.php");
-				
+	{				
 		switch($_POST['format'])
 		{
 			case ilLoePoExportPlugin::TYPE_EXCEL:
-				$name = 'Löwenportal_Export';
+				$name_tmp = 'Löwenportal_Export';
+				$name = "prf_".$_POST['lpnum']."";
 				$suffix = 'xls';
-				$type = ilLoePoExport::TYPE_EXCEL;
 				break;
 
 			default:
 				$name = 'Löwenportal_Export';
+				$name = "prf_".$_POST['lpnum']."";
 				$suffix = 'xls';
-				$type = ilLoePoExport::TYPE_EXCEL;
 				break;
 		}
 		
@@ -115,13 +116,13 @@ class ilLoePoExportPlugin extends ilPlugin
 		require_once $this->getDirectory(). '/lib/PHPExcel-1.8/Classes/PHPExcel.php';
 		$excelObj = new PHPExcel();
 		
-		$this->fillData($worksheet = $excelObj->getActiveSheet());
-
-		$cell = $worksheet->getCell('A1');
-		$cell->setValueExplicit('blubb', PHPExcel_Cell_DataType::TYPE_STRING);
+		$this->prepairDataArea($worksheet = $excelObj->getActiveSheet());
 		
-		$worksheet->setTitle('test_results');
-		$worksheet->setComments(array());
+		$this->prepairDataHeader($worksheet);
+		
+		$this->fillData($worksheet);
+
+		
 		
 		$excelObj->setActiveSheetIndex(0);
 		
@@ -130,13 +131,131 @@ class ilLoePoExportPlugin extends ilPlugin
 		
 		if (is_file($path))
 		{
-			ilUtil::deliverFile($path, $_POST['pruefungsnummer'].'_klu.xls', '', false, true);
+			ilUtil::deliverFile($path, $name.".".$suffix, '', false, true);
 			ilUtil::sendSuccess(sprintf($this->txt('ilLoePoExport_export_written'), basename($path)), true);
 		}
 		else
 		{
 			ilUtil::sendFailure($this->plugin->txt('export_not_found'), true);
 		}
+	}
+	
+	/**
+	 * Mark the corners of data area
+	 * @param PHPExcel_Worksheet	$worksheet
+	 */
+	protected function prepairDataArea($worksheet)
+	{
+		$data = $this->ilObjTestData;
+		
+		/* Prepair data area for Löwenportal */
+		$cell = $worksheet->getCell('A1');
+		$cell->setValueExplicit('startHISsheet', PHPExcel_Cell_DataType::TYPE_STRING);
+		
+		$cell = $worksheet->getCell('H1');
+		$cell->setValueExplicit('endHISsheet', PHPExcel_Cell_DataType::TYPE_STRING);		
+		
+		$cell = $worksheet->getCell('A'.(count($data->getParticipants())+4));
+		$cell->setValueExplicit('endHISsheet', PHPExcel_Cell_DataType::TYPE_STRING);
+		
+		$worksheet->setTitle('test_results');
+		$worksheet->setComments(array());
+	}
+	
+	/**
+	 * write legend header
+	 * @param PHPExcel_Worksheet	$worksheet
+	 */
+	protected function prepairDataHeader($worksheet)
+	{		
+		/* Prepair data header for Löwenportal */
+		$cell = $worksheet->getCell('A2');
+		$cell->setValueExplicit('mtknr', PHPExcel_Cell_DataType::TYPE_STRING);
+		$cell->getStyle()->applyFromArray(
+				array(
+					'fill' => array(
+							'type' => PHPExcel_Style_Fill::FILL_SOLID,
+							'color' => array('rgb' => 'AAAAAA')
+					)
+				)
+			);
+		
+		$cell = $worksheet->getCell('B2');
+		$cell->setValueExplicit('nachname', PHPExcel_Cell_DataType::TYPE_STRING);
+		$cell->getStyle()->applyFromArray(
+				array(
+						'fill' => array(
+								'type' => PHPExcel_Style_Fill::FILL_SOLID,
+								'color' => array('rgb' => 'AAAAAA')
+						)
+				)
+			);
+		
+		$cell = $worksheet->getCell('C2');
+		$cell->setValueExplicit('vorname', PHPExcel_Cell_DataType::TYPE_STRING);
+		$cell->getStyle()->applyFromArray(
+				array(
+						'fill' => array(
+								'type' => PHPExcel_Style_Fill::FILL_SOLID,
+								'color' => array('rgb' => 'AAAAAA')
+						)
+				)
+			);
+		
+		$cell = $worksheet->getCell('D2');
+		$cell->setValueExplicit('bewertung', PHPExcel_Cell_DataType::TYPE_STRING);
+		$cell->getStyle()->applyFromArray(
+				array(
+						'fill' => array(
+								'type' => PHPExcel_Style_Fill::FILL_SOLID,
+								'color' => array('rgb' => 'AAAAAA')
+						)
+				)
+			);
+		
+		$cell = $worksheet->getCell('E2');
+		$cell->setValueExplicit('pversuch', PHPExcel_Cell_DataType::TYPE_STRING);
+		$cell->getStyle()->applyFromArray(
+				array(
+						'fill' => array(
+								'type' => PHPExcel_Style_Fill::FILL_SOLID,
+								'color' => array('rgb' => 'AAAAAA')
+						)
+				)
+			);
+		
+		$cell = $worksheet->getCell('F2');
+		$cell->setValueExplicit('pvermerk', PHPExcel_Cell_DataType::TYPE_STRING);
+		$cell->getStyle()->applyFromArray(
+				array(
+						'fill' => array(
+								'type' => PHPExcel_Style_Fill::FILL_SOLID,
+								'color' => array('rgb' => 'AAAAAA')
+						)
+				)
+			);
+		
+		$cell = $worksheet->getCell('G2');
+		$cell->setValueExplicit('Studienprogramm', PHPExcel_Cell_DataType::TYPE_STRING);
+		$cell->getStyle()->applyFromArray(
+				array(
+						'fill' => array(
+								'type' => PHPExcel_Style_Fill::FILL_SOLID,
+								'color' => array('rgb' => 'AAAAAA')
+						)
+				)
+			);
+		
+		$cell = $worksheet->getCell('H2');
+		$cell->setValueExplicit('email', PHPExcel_Cell_DataType::TYPE_STRING);
+		$cell->getStyle()->applyFromArray(
+				array(
+						'fill' => array(
+								'type' => PHPExcel_Style_Fill::FILL_SOLID,
+								'color' => array('rgb' => 'AAAAAA')
+						)
+				)
+			);
 	}
 	
 	/**
@@ -147,81 +266,37 @@ class ilLoePoExportPlugin extends ilPlugin
 	{
 		$data = $this->ilObjTestData;
 		
-		
-		
-		
-		
-		return false;
-		$data = array();
-		/** @var ilExteStatValue[]  $values */
-		$values = $this->statObj->getSourceData()->getBasicTestValues();
-		foreach ($this->statObj->getSourceData()->getBasicTestValuesList() as $def)
+		$row = 3;
+				
+		foreach($data->getTestParticipants() as $id => $user)
 		{
-			array_push($data,
-					array(
-							'title' => $def['title'],
-							'description' => $def['description'],
-							'value' => $values[$def['id']],
-							'details' => null
-					));
-		}
-		
-		/** @var  ilExteEvalTest $evaluation */
-		foreach ($this->statObj->getEvaluations(
-				ilExtendedTestStatistics::LEVEL_TEST,
-				ilExtendedTestStatistics::PROVIDES_VALUE) as $class => $evaluation)
-		{
-			array_push($data,
-					array(
-							'title' => $evaluation->getTitle(),
-							'description' => $evaluation->getDescription(),
-							'value' => $evaluation->getValue()
-					));
-		}
-		
-		// Debug value formats
-		if ($this->plugin->debugFormats())
-		{
-			foreach (ilExteStatValue::_getDemoValues() as $value)
-			{
-				array_push($data,
-						array(
-								'title' => $value->comment,
-								'description' => '',
-								'value' => $value,
-						));
-			}
-		}
-		
-		$rownum = 0;
-		$comments = array();
-		foreach ($data as $row)
-		{
-			$rownum++;
+			$u = new ilObjUser($data->_getUserIdFromActiveId($id));
+
+			$user_result = $data->getResultsForActiveId($id);
 			
-			// title
-			$cell = $worksheet->getCell('A'.$rownum);
-			$cell->setValueExplicit($row['title'],PHPExcel_Cell_DataType::TYPE_STRING);
-			$cell->getStyle()->applyFromArray($this->headerStyle);
-			if (!empty($row['description']))
-			{
-				$comments['A'.$rownum] = ilExteStatValueExcel::_createComment($row['description']);
-			}
+			$cell = $worksheet->getCell('A'.$row);
+			$cell->setValueExplicit($user['matriculation'], PHPExcel_Cell_DataType::TYPE_STRING);
 			
-			/** @var ilExteStatValue $value */
-			$value = $row['value'];
-			$cell = $worksheet->getCell('B'.$rownum);
-			$cell->getStyle()->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
-			$this->valView->writeInCell($cell, $value);
-			if (!empty($value->comment))
-			{
-				$comments['B'.$rownum] = $this->valView->getComment($value);
-			}
+			$cell = $worksheet->getCell('B'.$row);
+			$cell->setValueExplicit($user['lastname'], PHPExcel_Cell_DataType::TYPE_STRING);
+			
+			$cell = $worksheet->getCell('C'.$row);
+			$cell->setValueExplicit($user['firstname'], PHPExcel_Cell_DataType::TYPE_STRING);
+			
+			$cell = $worksheet->getCell('D'.$row);
+			$cell->setValueExplicit($user_result['mark_official'], PHPExcel_Cell_DataType::TYPE_STRING);
+			
+			$cell = $worksheet->getCell('E'.$row);
+			$cell->setValueExplicit($user['tries'], PHPExcel_Cell_DataType::TYPE_STRING);
+			
+			$cell = $worksheet->getCell('G'.$row);
+			$cell->setValueExplicit(1, PHPExcel_Cell_DataType::TYPE_STRING);
+			
+			$cell = $worksheet->getCell('H'.$row);
+			$cell->setValueExplicit($u->getEmail(), PHPExcel_Cell_DataType::TYPE_STRING);
+				
+			$row++;
 		}
-		
-		$worksheet->setTitle($this->plugin->txt('test_results'));
-		$worksheet->setComments($comments);
-		$this->adjustSizes($worksheet);
 	}
 	
 	/**
