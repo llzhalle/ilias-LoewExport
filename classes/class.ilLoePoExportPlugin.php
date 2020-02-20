@@ -2,6 +2,8 @@
 
 include_once("./Services/Component/classes/class.ilPlugin.php");
 	
+use ILIAS\Filesystem\Util\LegacyPathHelper;
+
 /**
 * Question plugin Infotext
 *
@@ -122,14 +124,19 @@ class ilLoePoExportPlugin extends ilPlugin
 		
 		$this->fillData($worksheet);
 
-		
-		
 		$excelObj->setActiveSheetIndex(0);
+		
+		if(is_dir(dirname($path)) === false)
+		{
+			global $DIC;
+			
+			$DIC->filesystem()->storage()->createDir(LegacyPathHelper::createRelativePath(dirname($path)));
+		}
 		
 		$writerObj = PHPExcel_IOFactory::createWriter($excelObj, 'Excel5');
 		$writerObj->save($path);
 		
-		if (is_file($path))
+		if(is_file($path))
 		{
 			ilUtil::deliverFile($path, $name.".".$suffix, '', false, true);
 			ilUtil::sendSuccess(sprintf($this->txt('ilLoePoExport_export_written'), basename($path)), true);
