@@ -7,3 +7,6 @@
 <!-- language file start -->
 ilLoePoExport_Label#:#Create Test Results Export File for Löwenportal
 ilLoePoExport_export_written#:#Results Export File `%s` was written and downloaded.
+ilLoePoExport_export_not_found#:#Writing the Results Export File `%s` was resulted in an error.
+ilLoePoExport_data_error#:#a data error occured!
+ilLoePoExport_mark_error#:#an error occured while analyzing the mark system!
