@@ -167,13 +167,13 @@ class ilLoePoExportPlugin extends ilPlugin
 		{
 			case ilLoePoExportPlugin::TYPE_EXCEL:
 				$name_tmp = 'Löwenportal_Export';
-				$name = "prf_".$_POST['lpnum']."";
+				$name = "prf_".$_POST['lpnum']."_".$_POST['lpsem']."_".$_POST['lpdate']."";
 				$suffix = 'xls';
 				break;
 
 			default:
 				$name = 'Löwenportal_Export';
-				$name = "prf_".$_POST['lpnum']."";
+				$name = "prf_".$_POST['lpnum']."_".$_POST['lpsem']."_".$_POST['lpdate']."";
 				$suffix = 'xls';
 				break;
 		}
@@ -219,7 +219,7 @@ class ilLoePoExportPlugin extends ilPlugin
 		}
 		else
 		{
-			ilUtil::sendFailure($this->txt('ilLoePoExport_export_not_found'), true);
+			ilUtil::sendFailure(sprintf($this->txt('ilLoePoExport_export_not_found'), basename($path)), true);
 		}
 	}
 	
@@ -478,7 +478,7 @@ class ilLoePoExportPlugin extends ilPlugin
 				{
 					if(count($mark_official_tmp[0]) === 1)
 					{
-						if(isset($mark_short[$key]) === false || $mark_short[$key] === $mark_official_tmp[0][0])
+						if(isset($mark_short[$key]) === false || $mark_short[$key] === $mark_official_tmp[0][0] || floatval($mark_short[$key]) === floatval($mark_official_tmp[0][0]))
 						{
 							$mark_official[$key] = $mark_official_tmp[0][0];
 						}
@@ -512,7 +512,7 @@ class ilLoePoExportPlugin extends ilPlugin
 			{
 				if(array_keys($mark_short) === array_keys($mark_official))
 				{
-					$this->loeMarkField = "mark_short";
+					$this->loeMarkField = "mark_official";
 				}
 				else 
 				{
