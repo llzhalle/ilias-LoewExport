@@ -60,22 +60,22 @@ class ilLoePoExportPlugin extends ilPlugin
 				"3.8" => 380,
 				"3.9" => 390,
 				"4.0" => 400,
-				"4.1" => 410,
-				"4.2" => 420,
-				"4.3" => 430,
-				"4.4" => 440,
-				"4.5" => 450,
-				"4.6" => 460,
-				"4.7" => 470,
-				"4.8" => 480,
-				"4.9" => 490,
+// 				"4.1" => 410,
+// 				"4.2" => 420,
+// 				"4.3" => 430,
+// 				"4.4" => 440,
+// 				"4.5" => 450,
+// 				"4.6" => 460,
+// 				"4.7" => 470,
+// 				"4.8" => 480,
+// 				"4.9" => 490,
 			),
 			"wiwi" => array(
-				"0" => 0,
+				"0" => "-P",
 				/* Passthrough */
 			),
 			"law" => array(
-				"0" => 0,
+				"0" => "-P",
 				/* Passthrough */
 			),
 	);
@@ -153,6 +153,7 @@ class ilLoePoExportPlugin extends ilPlugin
 		global $tpl;
 		
 		/* inject JS */
+		$tpl->addJavaScript($this->getDirectory().'/templates/loepoexp_lang.js');
 		$tpl->addJavaScript($this->getDirectory().'/templates/loepoexp.js');
 	}
 	
@@ -208,14 +209,16 @@ class ilLoePoExportPlugin extends ilPlugin
 			
 			$DIC->filesystem()->storage()->createDir(LegacyPathHelper::createRelativePath(dirname($path)));
 		}
-		
+				
 		$writerObj = PHPExcel_IOFactory::createWriter($excelObj, 'Excel5');
+		
 		$writerObj->save($path);
 
 		if(is_file($path) === true)
 		{
-			ilUtil::deliverFile($path, $name.".".$suffix, '', false, true);
+			ilUtil::deliverFile($path, $name.".".$suffix, '', false, true, false);
 			ilUtil::sendSuccess(sprintf($this->txt('ilLoePoExport_export_written'), basename($path)), true);
+			$ilCtrl->redirectByClass('iltestexportgui');
 		}
 		else
 		{
@@ -387,6 +390,9 @@ class ilLoePoExportPlugin extends ilPlugin
 			$user_result = $data->getResultsForActiveId($id);
 			
 			if(empty($user['matriculation']) === true) {
+				
+				ilUtil::sendInfo('error matrikel', true);
+				
 				continue;
 			}
 			
