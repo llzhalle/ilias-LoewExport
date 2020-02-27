@@ -10,3 +10,4 @@ ilLoePoExport_export_written#:#Results Export File `%s` was written and download
 ilLoePoExport_export_not_found#:#Writing the Results Export File `%s` was resulted in an error.
 ilLoePoExport_data_error#:#a data error occured!
 ilLoePoExport_mark_error#:#an error occured while analyzing the mark system!
+ilLoePoExport_error_matrikel#:#A participant without matrikulation was found while creating the Export File for Löwenportal!

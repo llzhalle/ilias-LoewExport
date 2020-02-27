@@ -60,15 +60,6 @@ class ilLoePoExportPlugin extends ilPlugin
 				"3.8" => 380,
 				"3.9" => 390,
 				"4.0" => 400,
-// 				"4.1" => 410,
-// 				"4.2" => 420,
-// 				"4.3" => 430,
-// 				"4.4" => 440,
-// 				"4.5" => 450,
-// 				"4.6" => 460,
-// 				"4.7" => 470,
-// 				"4.8" => 480,
-// 				"4.9" => 490,
 			),
 			"wiwi" => array(
 				"0" => "-P",
@@ -79,6 +70,8 @@ class ilLoePoExportPlugin extends ilPlugin
 				/* Passthrough */
 			),
 	);
+	
+	private $protectCells = true;
 	
 	const TYPE_EXCEL = 'excel';
 	const TYPE_OUTPUT = 'short';
@@ -198,11 +191,16 @@ class ilLoePoExportPlugin extends ilPlugin
 			$ilCtrl->redirectByClass('iltestexportgui');
 			return;
 		}
-
-		$excelObj->setActiveSheetIndex(0);
+		
+		if($this->protectCells === true)
+		{
+			$this->protectDataCells($worksheet);
+		}
 		
 		$this->adjustSizes($worksheet);
-		
+
+		$excelObj->setActiveSheetIndex(0);
+
 		if(is_dir(dirname($path)) === false)
 		{
 			global $DIC;
@@ -218,7 +216,6 @@ class ilLoePoExportPlugin extends ilPlugin
 		{
 			ilUtil::deliverFile($path, $name.".".$suffix, '', false, true, false);
 			ilUtil::sendSuccess(sprintf($this->txt('ilLoePoExport_export_written'), basename($path)), true);
-			$ilCtrl->redirectByClass('iltestexportgui');
 		}
 		else
 		{
@@ -391,7 +388,7 @@ class ilLoePoExportPlugin extends ilPlugin
 			
 			if(empty($user['matriculation']) === true) {
 				
-				ilUtil::sendInfo('error matrikel', true);
+				ilUtil::sendInfo($this->txt('ilLoePoExport_error_matrikel'), true);
 				
 				continue;
 			}
@@ -425,6 +422,24 @@ class ilLoePoExportPlugin extends ilPlugin
 				$cell->setValueExplicit($u->getEmail(), PHPExcel_Cell_DataType::TYPE_STRING);
 			}
 		}
+	}
+	
+	/**
+	 * protect the datacells
+	 * @param PHPExcel_Worksheet $worksheet
+	 * @param ilLoePoExportPlugin::TYPE_OUTPUT $exportType
+	 */
+	private function protectDataCells($worksheet, $exportType = ilLoePoExportPlugin::TYPE_OUTPUT)
+	{		
+		$data = $this->ilObjTestData;
+		
+		$worksheet->getProtection()->setSheet(true);
+		
+		$worksheet->getStyle('A1:'.($exportType === 'short' ? 'B' : 'H').(count($data->getParticipants())+4))
+					->getProtection()
+					->setLocked(
+							PHPExcel_Style_Protection::PROTECTION_PROTECTED
+						);
 	}
 	
 	/**
