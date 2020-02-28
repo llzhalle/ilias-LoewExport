@@ -588,11 +588,14 @@ class ilLoePoExportPlugin extends ilPlugin
 		/* get number from string, if there is any */
 		preg_match_all('!\d+(?:\.\d+)?!', str_replace(",", ".", $user_result[$this->loeMarkField]), $mark);
 		
-		if($user_result['passed'] === "0" && $user_result['pass'] === "0" && $user_result['failed'] === "1")
+		if($user_result['passed'] === "0" && $user_result['failed'] === "1")
 		{
 			return $this->loeMarkMapping[$this->loeMarkSchema][0] ?? $mark[0][0];
 		}
-		else {
+		else if($this->loeMarkSchema === "simple" && $user_result['passed'] === "1" && $user_result['failed'] === "0")
+		{
+			return $this->loeMarkMapping[$this->loeMarkSchema][1] ?? $mark[0][0];
+		} else {
 			return $this->loeMarkMapping[$this->loeMarkSchema][$mark[0][0]] ?? $mark[0][0];
 		}
 
