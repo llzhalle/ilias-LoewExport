@@ -1,27 +1,20 @@
 <?php
 
 include_once("./Services/Component/classes/class.ilPlugin.php");
-	
+
 use ILIAS\Filesystem\Util\LegacyPathHelper;
 
-/**
-* Question plugin Infotext
-*
-* @author Christoph Jobst <christoph.jobst@llz.uni-halle.de>
-* @version $Id$
-* @ingroup ModulesTestQuestionPool
-*/
 class ilLoePoExportPlugin extends ilPlugin
 {
 	/**
 	 * @var ilObjTest
 	 */
 	private $ilObjTestData;
-	
+
 	private $loeMarkSchema = null;
-	
+
 	private $loeMarkField = 'mark';
-	
+
 	private $loeMarkMapping = array(
 			"simple" => array(
 				"1" => "++",
@@ -70,17 +63,17 @@ class ilLoePoExportPlugin extends ilPlugin
 				/* Passthrough */
 			),
 	);
-	
+
 	private $protectCells = true;
-	
+
 	const TYPE_EXCEL = 'excel';
 	const TYPE_OUTPUT = 'short';
-	
+
 	final function getPluginName()
 	{
 		return "LoePoExport";
 	}
-	
+
 	/**
 	 * Get Component Type
 	 *
@@ -90,7 +83,7 @@ class ilLoePoExportPlugin extends ilPlugin
 	{
 		return IL_COMP_MODULE;
 	}
-	
+
 	/**
 	 * Get Component Name.
 	 *
@@ -100,7 +93,7 @@ class ilLoePoExportPlugin extends ilPlugin
 	{
 		return "Test";
 	}
-	
+
 	/**
 	 * Get Slot Name.
 	 *
@@ -110,7 +103,7 @@ class ilLoePoExportPlugin extends ilPlugin
 	{
 		return "Export";
 	}
-	
+
 	/**
 	 * Get Slot ID.
 	 *
@@ -120,7 +113,7 @@ class ilLoePoExportPlugin extends ilPlugin
 	{
 		return "texp";
 	}
-	
+
 	/**
 	 * Object initialization done by slot.
 	 */
@@ -128,12 +121,12 @@ class ilLoePoExportPlugin extends ilPlugin
 	{
 		// nothing to do here
 	}
-	
+
 	function getFormat()
 	{
 		return ilLoePoExportPlugin::TYPE_EXCEL;
 	}
-	
+
 	function getFormatLabel()
 	{
 		return $this->txt('ilLoePoExport_Label');
@@ -142,21 +135,21 @@ class ilLoePoExportPlugin extends ilPlugin
 	function setTest($obj)
 	{
 		$this->ilObjTestData = $obj;
-		
+
 		global $tpl;
-		
+
 		/* inject JS */
 		$tpl->addJavaScript($this->getDirectory().'/templates/loepoexp_lang.js');
 		$tpl->addJavaScript($this->getDirectory().'/templates/loepoexp.js');
 	}
-	
+
 	/**
 	 * build the export file, save, deliver and remove it
 	 */
 	function export()
-	{		
+	{
 		global $ilCtrl;
-		
+
 		switch($_POST['format'])
 		{
 			case ilLoePoExportPlugin::TYPE_EXCEL:
@@ -171,19 +164,19 @@ class ilLoePoExportPlugin extends ilPlugin
 				$suffix = 'xls';
 				break;
 		}
-		
+
 		require_once('Modules/Test/classes/class.ilTestExportFilename.php');
 		$filename = new ilTestExportFilename($this->ilObjTestData);
-		
+
 		$path = $filename->getPathname($suffix, $name);
-		
+
 		require_once $this->getDirectory(). '/lib/PHPExcel-1.8/Classes/PHPExcel.php';
 		$excelObj = new PHPExcel();
-		
+
 		$this->prepairDataArea($worksheet = $excelObj->getActiveSheet());
-		
+
 		$this->prepairDataHeader($worksheet);
-		
+
 		try {
 			$this->fillData($worksheet);
 		} catch (Exception $e) {
@@ -191,12 +184,12 @@ class ilLoePoExportPlugin extends ilPlugin
 			$ilCtrl->redirectByClass('iltestexportgui');
 			return;
 		}
-		
+
 		if($this->protectCells === true)
 		{
 			$this->protectDataCells($worksheet);
 		}
-		
+
 		$this->adjustSizes($worksheet);
 
 		$excelObj->setActiveSheetIndex(0);
@@ -204,12 +197,12 @@ class ilLoePoExportPlugin extends ilPlugin
 		if(is_dir(dirname($path)) === false)
 		{
 			global $DIC;
-			
+
 			$DIC->filesystem()->storage()->createDir(LegacyPathHelper::createRelativePath(dirname($path)));
 		}
-				
+
 		$writerObj = PHPExcel_IOFactory::createWriter($excelObj, 'Excel5');
-		
+
 		$writerObj->save($path);
 
 		if(is_file($path) === true)
@@ -222,7 +215,7 @@ class ilLoePoExportPlugin extends ilPlugin
 			ilUtil::sendFailure(sprintf($this->txt('ilLoePoExport_export_not_found'), basename($path)), true);
 		}
 	}
-	
+
 	/**
 	 * Mark the corners of data area
 	 * @param PHPExcel_Worksheet	$worksheet
@@ -231,28 +224,28 @@ class ilLoePoExportPlugin extends ilPlugin
 	protected function prepairDataArea($worksheet, $exportType = ilLoePoExportPlugin::TYPE_OUTPUT)
 	{
 		$data = $this->ilObjTestData;
-		
+
 		/* Prepair data area for Löwenportal */
 		$cell = $worksheet->getCell('A1');
 		$cell->setValueExplicit('startHISsheet', PHPExcel_Cell_DataType::TYPE_STRING);
-		
+
 		$cell = $worksheet->getCell($exportType === 'short' ? 'B1' : 'H1');
-		$cell->setValueExplicit('endHISsheet', PHPExcel_Cell_DataType::TYPE_STRING);		
-		
+		$cell->setValueExplicit('endHISsheet', PHPExcel_Cell_DataType::TYPE_STRING);
+
 		$cell = $worksheet->getCell('A'.(count($data->getParticipants())+4));
 		$cell->setValueExplicit('endHISsheet', PHPExcel_Cell_DataType::TYPE_STRING);
-		
+
 		$worksheet->setTitle('First Sheet');
 		$worksheet->setComments(array());
 	}
-	
+
 	/**
 	 * write legend header
 	 * @param PHPExcel_Worksheet	$worksheet
 	 * @param ilLoePoExportPlugin::TYPE_OUTPUT 	$exportType
 	 */
 	protected function prepairDataHeader($worksheet, $exportType = ilLoePoExportPlugin::TYPE_OUTPUT)
-	{		
+	{
 		/* Prepair data header for Löwenportal */
 		$cell = $worksheet->getCell('A2');
 		$cell->setValueExplicit('mtknr', PHPExcel_Cell_DataType::TYPE_STRING);
@@ -264,7 +257,7 @@ class ilLoePoExportPlugin extends ilPlugin
 					)
 				)
 			);
-		
+
 		if($exportType === 'short')
 		{
 			$cell = $worksheet->getCell('B2');
@@ -278,7 +271,7 @@ class ilLoePoExportPlugin extends ilPlugin
 					)
 				);
 		}
-		else 
+		else
 		{
 			$cell = $worksheet->getCell('B2');
 			$cell->setValueExplicit('nachname', PHPExcel_Cell_DataType::TYPE_STRING);
@@ -290,7 +283,7 @@ class ilLoePoExportPlugin extends ilPlugin
 							)
 					)
 				);
-			
+
 			$cell = $worksheet->getCell('C2');
 			$cell->setValueExplicit('vorname', PHPExcel_Cell_DataType::TYPE_STRING);
 			$cell->getStyle()->applyFromArray(
@@ -301,7 +294,7 @@ class ilLoePoExportPlugin extends ilPlugin
 							)
 					)
 				);
-			
+
 			$cell = $worksheet->getCell('D2');
 			$cell->setValueExplicit('bewertung', PHPExcel_Cell_DataType::TYPE_STRING);
 			$cell->getStyle()->applyFromArray(
@@ -312,7 +305,7 @@ class ilLoePoExportPlugin extends ilPlugin
 							)
 					)
 				);
-			
+
 			$cell = $worksheet->getCell('E2');
 			$cell->setValueExplicit('pversuch', PHPExcel_Cell_DataType::TYPE_STRING);
 			$cell->getStyle()->applyFromArray(
@@ -323,7 +316,7 @@ class ilLoePoExportPlugin extends ilPlugin
 							)
 					)
 				);
-			
+
 			$cell = $worksheet->getCell('F2');
 			$cell->setValueExplicit('pvermerk', PHPExcel_Cell_DataType::TYPE_STRING);
 			$cell->getStyle()->applyFromArray(
@@ -334,7 +327,7 @@ class ilLoePoExportPlugin extends ilPlugin
 							)
 					)
 				);
-			
+
 			$cell = $worksheet->getCell('G2');
 			$cell->setValueExplicit('Studienprogramm', PHPExcel_Cell_DataType::TYPE_STRING);
 			$cell->getStyle()->applyFromArray(
@@ -345,7 +338,7 @@ class ilLoePoExportPlugin extends ilPlugin
 							)
 					)
 				);
-			
+
 			$cell = $worksheet->getCell('H2');
 			$cell->setValueExplicit('email', PHPExcel_Cell_DataType::TYPE_STRING);
 			$cell->getStyle()->applyFromArray(
@@ -358,7 +351,7 @@ class ilLoePoExportPlugin extends ilPlugin
 				);
 		}
 	}
-	
+
 	/**
 	 * Fill the test data to sheet
 	 * @param PHPExcel_Worksheet	$worksheet
@@ -373,128 +366,128 @@ class ilLoePoExportPlugin extends ilPlugin
 				throw $e;
 			}
 		}
-		
+
 		$data = $this->ilObjTestData;
-				
+
 		$row = 2;
-				
+
 		foreach($data->getTestParticipants() as $id => $user)
 		{
 			$row++;
-			
+
 			$u = new ilObjUser($data->_getUserIdFromActiveId($id));
 
 			$user_result = $data->getResultsForActiveId($id);
-			
+
 			if(empty($user['matriculation']) === true) {
-				
+
 				ilUtil::sendInfo($this->txt('ilLoePoExport_error_matrikel'), true);
-				
+
 				continue;
 			}
-			
+
 			$cell = $worksheet->getCell('A'.$row);
 			$cell->setValueExplicit($user['matriculation'], PHPExcel_Cell_DataType::TYPE_STRING);
-			
+
 			if($exportType === 'short')
 			{
 				$cell = $worksheet->getCell('B'.$row);
 				$cell->setValueExplicit($this->getFilteredMark($user_result), PHPExcel_Cell_DataType::TYPE_STRING);
 			}
-			else 
+			else
 			{
 				$cell = $worksheet->getCell('B'.$row);
 				$cell->setValueExplicit($user['lastname'], PHPExcel_Cell_DataType::TYPE_STRING);
-				
+
 				$cell = $worksheet->getCell('C'.$row);
 				$cell->setValueExplicit($user['firstname'], PHPExcel_Cell_DataType::TYPE_STRING);
-				
+
 				$cell = $worksheet->getCell('D'.$row);
 				$cell->setValueExplicit($this->getFilteredMark($user_result), PHPExcel_Cell_DataType::TYPE_STRING);
-				
+
 				$cell = $worksheet->getCell('E'.$row);
 				$cell->setValueExplicit($user['tries'], PHPExcel_Cell_DataType::TYPE_STRING);
-				
+
 				$cell = $worksheet->getCell('G'.$row);
 				$cell->setValueExplicit(1, PHPExcel_Cell_DataType::TYPE_STRING);
-				
+
 				$cell = $worksheet->getCell('H'.$row);
 				$cell->setValueExplicit($u->getEmail(), PHPExcel_Cell_DataType::TYPE_STRING);
 			}
 		}
 	}
-	
+
 	/**
 	 * protect the datacells
 	 * @param PHPExcel_Worksheet $worksheet
 	 * @param ilLoePoExportPlugin::TYPE_OUTPUT $exportType
 	 */
 	private function protectDataCells($worksheet, $exportType = ilLoePoExportPlugin::TYPE_OUTPUT)
-	{		
+	{
 		$data = $this->ilObjTestData;
-		
+
 		$worksheet->getProtection()->setSheet(true);
-		
+
 		$worksheet->getStyle('A1:'.($exportType === 'short' ? 'B' : 'H').(count($data->getParticipants())+4))
 					->getProtection()
 					->setLocked(
 							PHPExcel_Style_Protection::PROTECTION_PROTECTED
 						);
 	}
-	
+
 	/**
 	 * @param PHPExcel_Worksheet	$worksheet
 	 */
 	protected function adjustSizes($worksheet, $range = null)
 	{
 		$range = isset($range) ? $range : range('A', $worksheet->getHighestColumn());
-		
+
 		foreach ($range as $columnID)
 		{
 			$worksheet->getColumnDimension($columnID)->setAutoSize(true);
 		}
 	}
-	
+
 	private function detectMarkSchema()
 	{
 		$data = $this->ilObjTestData;
-		
+
 		$schema = $data->getMarkSchema();
-		
+
 		if(is_array($schema->mark_steps) && count($schema->mark_steps) === 2 &&
 		   ($schema->mark_steps[0]->passed === "" && $schema->mark_steps[1]->passed === "1" || $schema->mark_steps[0]->passed === "1" && $schema->mark_steps[1]->passed === "")
 		) {
 			$this->loeMarkSchema = "simple";
 		}
-		else 
+		else
 		{
 			$mark_short = $mark_official = array();
-			
+
 			foreach($schema->mark_steps as $key => $step)
 			{
 				if($step->passed === "")
 				{
 					continue;
 				}
-				
+
 				$mark_tmp = $mark_official_tmp = array();
-				
+
 				/* get number from string, if there is any */
 				preg_match_all('!\d+(?:\.\d+)?!', str_replace(",", ".", $step->short_name), $mark_tmp);
 				preg_match_all('!\d+(?:\.\d+)?!', str_replace(",", ".", $step->official_name), $mark_official_tmp);
-				
+
 				if(empty($mark_tmp[0]) === false)
 				{
 					if(count($mark_tmp[0]) === 1)
 					{
 						$mark_short[$key] = $mark_tmp[0][0];
 					}
-					else 
+					else
 					{
-						throw new Exception("ilLoePoExport_mark_error");
+						throw new Exception("ilLoePoExport_mark_error: more than on number in short_name");
 					}
 				}
-				
+
 				if(empty($mark_official_tmp[0]) === false)
 				{
 					if(count($mark_official_tmp[0]) === 1)
@@ -505,21 +498,21 @@ class ilLoePoExportPlugin extends ilPlugin
 						}
 						else
 						{
-							throw new Exception("ilLoePoExport_mark_error");
+							throw new Exception("ilLoePoExport_mark_error: short_name and official_name in conflict");
 						}
 					}
 					else
 					{
-						throw new Exception("ilLoePoExport_mark_error");
+						throw new Exception("ilLoePoExport_mark_error: more than on number in official_name");
 					}
 				}
-				
+
 				if(empty($mark_short[$key]) === true && empty($mark_official[$key]) === true && $step->passed === "1")
 				{
-					throw new Exception("ilLoePoExport_mark_error");
+					throw new Exception("ilLoePoExport_mark_error: no number in short_name or official_name but complex mark scheme");
 				}
 			}
-			
+
 			/* get field that fits */
 			if(empty($mark_short) === true && empty($mark_official) === false)
 			{
@@ -535,19 +528,19 @@ class ilLoePoExportPlugin extends ilPlugin
 				{
 					$this->loeMarkField = "mark_official";
 				}
-				else 
+				else
 				{
-					throw new Exception("ilLoePoExport_mark_error");
+					throw new Exception("ilLoePoExport_mark_error: short_name and official_name in conflict for field");
 				}
 			}
-			else 
+			else
 			{
-				throw new Exception("ilLoePoExport_mark_error");
+				throw new Exception("ilLoePoExport_mark_error: no match for mark field");
 			}
-			
+
 			/* check if its floats */
 			$isFloat = false;
-			
+
 			foreach(${$this->loeMarkField} as $num)
 			{
 				if(filter_var($num, FILTER_VALIDATE_FLOAT) !== false)
@@ -555,19 +548,19 @@ class ilLoePoExportPlugin extends ilPlugin
 					$isFloat = true;
 				}
 			}
-			
+
 			/* check for normal marks */
 			if($isFloat === true || max(${$this->loeMarkField}) <= 6)
 			{
 				$this->loeMarkSchema = 'normal';
 			}
-			
+
 			/* check for Law */
 			if($isFloat === false || max(${$this->loeMarkField}) >= 6 && max(${$this->loeMarkField}) <= 18)
 			{
 				$this->loeMarkSchema = 'law';
 			}
-			
+
 			/* check for WiWi */
 			if($isFloat === false || max(${$this->loeMarkField}) >= 19 && max(${$this->loeMarkField}) <= 100)
 			{
@@ -575,19 +568,19 @@ class ilLoePoExportPlugin extends ilPlugin
 			}
 		}
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param array $user_result
 	 * @return string
 	 */
 	private function getFilteredMark($user_result = array())
-	{		
+	{
 		$mark = array();
-		
+
 		/* get number from string, if there is any */
 		preg_match_all('!\d+(?:\.\d+)?!', str_replace(",", ".", $user_result[$this->loeMarkField]), $mark);
-		
+
 		if($user_result['passed'] === "0" && $user_result['failed'] === "1")
 		{
 			return $this->loeMarkMapping[$this->loeMarkSchema][0] ?? $mark[0][0];
