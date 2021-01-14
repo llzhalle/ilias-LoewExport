@@ -455,7 +455,7 @@ class ilLoePoExportPlugin extends ilPlugin
 		$schema = $data->getMarkSchema();
 
 		if(is_array($schema->mark_steps) && count($schema->mark_steps) === 2 &&
-		   ($schema->mark_steps[0]->passed === "" && $schema->mark_steps[1]->passed === "1" || $schema->mark_steps[0]->passed === "1" && $schema->mark_steps[1]->passed === "")
+		   (($schema->mark_steps[0]->passed === "" || $schema->mark_steps[0]->passed === "0") && $schema->mark_steps[1]->passed === "1" || $schema->mark_steps[0]->passed === "1" && ($schema->mark_steps[1]->passed === "" || $schema->mark_steps[1]->passed === "0"))
 		) {
 			$this->loeMarkSchema = "simple";
 		}
