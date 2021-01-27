@@ -60,7 +60,7 @@ $( document ).ready(function() {
             $(this).parent().children('div.image').show();
         } else {
             var image_name=$(this).data('image');
-            var imageTag='<div class="image" style="position:absolute;">'+'<img src=".'+loepoexp_lang.path+image_name+'" alt="'+image_name+'" width="375px" />'+'</div>';
+            var imageTag='<div class="image" style="position:absolute;">'+'<img src="'+loepoexp_lang.path+image_name+'" alt="'+image_name+'" width="375px" />'+'</div>';
             $(this).parent().append(imageTag);
         }
 	});
@@ -75,7 +75,7 @@ $( document ).ready(function() {
             $(this).parent().children('div.image').show();
         } else {
             var image_name=$(this).data('image');
-            var imageTag='<div class="image" style="position:absolute;">'+'<img src=".'+loepoexp_lang.path+image_name+'" alt="'+image_name+'" width="375px" />'+'</div>';
+            var imageTag='<div class="image" style="position:absolute;">'+'<img src="'+loepoexp_lang.path+image_name+'" alt="'+image_name+'" width="375px" />'+'</div>';
             $(this).parent().append(imageTag);
         }
 	});
@@ -90,7 +90,7 @@ $( document ).ready(function() {
             $(this).parent().children('div.image').show();
         } else {
             var image_name=$(this).data('image');
-            var imageTag='<div class="image" style="position:absolute;">'+'<img src=".'+loepoexp_lang.path+image_name+'" alt="'+image_name+'" width="375px" />'+'</div>';
+            var imageTag='<div class="image" style="position:absolute;">'+'<img src="'+loepoexp_lang.path+image_name+'" alt="'+image_name+'" width="375px" />'+'</div>';
             $(this).parent().append(imageTag);
         }
 	});
