@@ -10,9 +10,9 @@ It allows to export the results for tests, the format is predetermined to be com
 Install the plugin
 
 ```bash
-mkdir -p Customizing/global/plugins/Modules/Test/Export  
+mkdir -p Customizing/global/plugins/Modules/Test/Export
 cd Customizing/global/plugins/Modules/Test/Export
-git clone https://github.com/llzhalle/ilias-LoewExport.git
+git clone https://github.com/llzhalle/ilias-LoewExport.git LoePoExport
 ```
 and activate it in the ILIAS-Admin-GUI.
 
